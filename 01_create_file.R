@@ -38,12 +38,14 @@ load(paste0(OUTPUT, "stations_information.rda"))
 # --> Jedes File hat einzelnen Messtype für ein Jahr
 
 setwd(INPUT)
-# - Tagesmittelwerte
+######  Tagesmittelwerte (für PM10, PM2_5, Schwefel)
 TMWs <- list.files(path = INPUT, pattern = "TMW_20221230.csv") %>% map_df(~fread(.)) %>%
   # nur die selecten, die auch in den anderen beiden Vorkommen
-  select(Station, Komponente, Datum, TMW)
+  select(Station, Komponente, Datum, TMW) %>%
+  replace_with_na(replace = list(`TMW` = -999)) 
 
-## -- 8h Stundenmittelwerte
+
+######   8h Stundenmittelwerte
 SMW8s <- list.files(path = INPUT, pattern = "inv8SMW_20221230.csv") %>% map_df(~fread(.)) %>%
   
   #replace -999 with na
@@ -53,7 +55,8 @@ SMW8s <- list.files(path = INPUT, pattern = "inv8SMW_20221230.csv") %>% map_df(~
   group_by(Station, Komponente, Datum) %>%
   summarise(TMW = mean(`8SMW`, na.rm = TRUE))
 
-# 1h Stundenmittelwerte
+
+######   1h Stundenmittelwerte
 SMW1s <- list.files(path = INPUT, pattern = "inv1SMW_20221230.csv") %>% map_df(~fread(.)) %>%
   
   #replace -999 with na
@@ -65,7 +68,6 @@ SMW1s <- list.files(path = INPUT, pattern = "inv1SMW_20221230.csv") %>% map_df(~
 
 
 df <- bind_rows(TMWs, SMW1s, SMW8s)
-
 
 
 # edits am main df
@@ -84,7 +86,9 @@ pollution_all <- df %>%
   
   mutate(type = case_when(type == "Schwefeldioxid" ~ "sulfur dioxide",
                           type == "Kohlenmonoxid" ~ "carbon monoxide",
-                          type == "Stickstoffdioxid" ~ "nitrogen dioxide")) %>%
+                          type == "Stickstoffdioxid" ~ "nitrogen dioxide",
+                          type == "PM10" ~ "PM10",
+                          type == "PM2_5" ~ "PM2_5")) %>%
   
   #select year, month, day
   mutate(year = as.numeric(substr(date, 1, 4)),
