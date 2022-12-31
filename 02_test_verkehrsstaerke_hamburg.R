@@ -257,6 +257,193 @@ merge_3$Average_cars_2868 <- as.integer(merge_3$Average_cars_2868)
 #Plot the five in one time series
 ts_plot(merge_3, title = "Traffic volume, station 2682,2683, 2686, 2687, Max-Brauer-Allee", 
         Xtitle = "Time, 2004 - 2020", 
-        Ytitle = "Average number of cars per day")
+        Ytitle = "Average number of cars per day", 
+        slider = TRUE)
 
 #.-----------------------------
+
+
+#2.) Stresemannstraße: In the Stresemannstraße, the ban only applies to lorry  trucks with 
+#a weight higher than 3,5 t 
+#Thus, we look at the DTV for Schwerverkehr
+#SV-Anteil am DTVw (%) 
+
+#----------------------------------
+
+#Station 2641: Row 525 - 528 
+#Construction influence: 2005 and 2017
+
+#Reduced
+# We need DTVw and SV-share 
+v_2634 <- v1[c (4, 526, 527),]
+View(v_2634)
+
+#Remove cols
+v_2634 <- v_2634[-c(1:4)]
+
+#Rows to cols
+v_2634_new <- as.data.frame(t(v_2634))
+View(v_2634_new)
+
+#Rename cols
+colnames(v_2634_new)[colnames(v_2634_new) == "4"] <- "Year"
+colnames(v_2634_new)[colnames(v_2634_new) == "526"] <- "DTVw_2634"
+colnames(v_2634_new)[colnames(v_2634_new) == "527"] <- "sv"
+
+#Change year column to time format
+v_2634_new$Year <- as.integer(v_2634_new$Year)
+v_2634_new$Year <- as.Date(paste(v_2634_new$Year, 12, 31, sep = "-"))
+
+#Change average number of cars to integer
+v_2634_new$DTVw_2634 <- as.integer(v_2634_new$DTVw_2634)
+
+
+#Make to percentage 
+v2634 <- v_2634_new
+v2634$sv <- ifelse(v2634$sv == 5, 0.05, 0.04)
+View(v2634)
+
+#Create new column by multiplying DTVw and sv
+v2634$truck <- v2634$DTVw_2634 * v2634$sv
+View(v2634)
+
+#Reduce
+v2634 <- v2634[-c(2,3)]
+
+#Plot
+ts_plot(v2634, title = "Traffic volume Station 2641, Stresemannstraße",
+        Xtitle = "Years 2004 - 2020",
+        Ytitle = "Average number of heavy cars per day in a certain year", 
+        color = "green", 
+        width = "3",
+        line.mode =  "lines+markers")
+
+
+#------------------------------------------
+
+#Station 2641: Row 529 - 532
+#Construction influence: -
+
+#Reduced
+# We need DTVw and SV-share 
+v_2641 <- v1[c (4, 530, 531),]
+View(v_2641)
+
+#Remove cols
+v_2641 <- v_2641[-c(1:4)]
+
+#Rows to cols
+v_2641_new <- as.data.frame(t(v_2641))
+View(v_2641_new)
+
+#Rename cols
+colnames(v_2641_new)[colnames(v_2641_new) == "4"] <- "Year"
+colnames(v_2641_new)[colnames(v_2641_new) == "530"] <- "DTVw_2641"
+colnames(v_2641_new)[colnames(v_2641_new) == "531"] <- "sv"
+
+#Change year column to time format
+v_2641_new$Year <- as.integer(v_2641_new$Year)
+v_2641_new$Year <- as.Date(paste(v_2641_new$Year, 12, 31, sep = "-"))
+
+#Change average number of cars to integer
+v_2641_new$DTVw_2641 <- as.integer(v_2641_new$DTVw_2641)
+v_2641_new$sv <- as.integer(v_2641_new$sv)
+
+#Make to percentage 
+v2641 <- v_2641_new
+v2641$sv <- ifelse(v2641$sv == 10, 0.1, v2641$sv)
+v2641$sv <- ifelse(v2641$sv == 9, 0.09, v2641$sv)
+v2641$sv <- ifelse(v2641$sv == 8, 0.08, v2641$sv)
+v2641$sv <- ifelse(v2641$sv == 7, 0.07, v2641$sv)
+View(v2641)
+str(v2641)
+
+
+#Create new column by multiplying DTVw and sv
+v2641$truck <- v2641$DTVw_2641 * v2641$sv
+View(v2641)
+
+#Reduce
+v2641 <- v2641[-c(2,3)]
+
+#Plot
+ts_plot(v2641, title = "Traffic volume Station 2641, Stresemannstraße",
+        Xtitle = "Years 2004 - 2020",
+        Ytitle = "Average number of heavy cars per day in a certain year", 
+        color = "green", 
+        width = "3",
+        line.mode =  "lines+markers")
+
+
+#---------------------------------
+
+#Station 2646: Row 537 - 540
+#Construction influence: -
+
+#Reduced
+# We need DTVw and SV-share 
+v_2646 <- v1[c (4, 538, 539),]
+View(v_2646)
+
+#Remove cols
+v_2646 <- v_2646[-c(1:4)]
+
+#Rows to cols
+v_2646_new <- as.data.frame(t(v_2646))
+View(v_2646_new)
+
+#Rename cols
+colnames(v_2646_new)[colnames(v_2646_new) == "4"] <- "Year"
+colnames(v_2646_new)[colnames(v_2646_new) == "538"] <- "DTVw_2646"
+colnames(v_2646_new)[colnames(v_2646_new) == "539"] <- "sv"
+
+#Change year column to time format
+v_2646_new$Year <- as.integer(v_2646_new$Year)
+v_2646_new$Year <- as.Date(paste(v_2646_new$Year, 12, 31, sep = "-"))
+
+#Change average number of cars to integer
+v_2646_new$DTVw_2646 <- as.integer(v_2646_new$DTVw_2646)
+v_2646_new$sv <- as.integer(v_2646_new$sv)
+
+#Make to percentage 
+v2646 <- v_2646_new
+v2646$sv <- ifelse(v2646$sv == 8, 0.08, v2646$sv)
+v2646$sv <- ifelse(v2646$sv == 7, 0.07, v2646$sv)
+v2646$sv <- ifelse(v2646$sv == 6, 0.06, v2646$sv)
+View(v2646)
+str(v2646)
+
+
+#Create new column by multiplying DTVw and sv
+v2646$truck <- v2646$DTVw_2646 * v2646$sv
+View(v2646)
+
+#Reduce
+v2646 <- v2646[-c(2,3)]
+
+#Plot
+ts_plot(v2646, title = "Traffic volume Station 2646, Stresemannstraße",
+        Xtitle = "Years 2004 - 2020",
+        Ytitle = "Average number of heavy cars per day in a certain year", 
+        color = "green", 
+        width = "3",
+        line.mode =  "lines+markers")
+
+#--------------------------------
+
+#All three stations into one plot 
+merger <- merge(v2634, v2641, by.x = "Year", by.y = "Year", all = TRUE)
+View(merger)
+merger_1 <- merge(merger, v2646, by.x = "Year", by.y = "Year", all = TRUE)
+View(merger_1)
+
+#Colnames change
+colnames(merger_1)[colnames(merger_1) == "truck.x"] <- "sv_2634"
+colnames(merger_1)[colnames(merger_1) == "truck.y"] <- "sv_2641"
+colnames(merger_1)[colnames(merger_1) == "truck"] <- "sv_2646"
+
+#Plot all three stations into 1 time series
+ts_plot(merger_1, title = "Traffic volume heavy vehicles, stations 2634, 2641, 2646, Stresemannstraße", 
+        Xtitle = "Time, 2004 - 2020", 
+        Ytitle = "Average number of heavy cars per day")
+
