@@ -4,35 +4,99 @@ rm(list = ls())
 
 #load libraries
 library(dplyr)
-library(lubridate)
-library(ggplot2)
-library(gridExtra)
-
+library(data.table)
+library(purrr)
+library(naniar)
 
 # INPUT, OUTPUT
-INPUT = "G:/Geteilte Ablagen/impact_evaluation_paper/"
-OUTPUT = "G:/Shared files/impact_evaluation_paper/"
+INPUT = "G:/Geteilte Ablagen/impact_evaluation_paper/csv_raw/HH_1990-2022/"
+OUTPUT = "G:/Geteilte Ablagen/impact_evaluation_paper/.rda/"
 
-# alle_stationen: alle zusammengefügte stationen, direkt aus den heruntergeladenen files.
-# downloadlink: https://www.overleaf.com/download/project/639c706417860e239c540d48/build/1852682647a-a7e5850ab1f632e2/output/output.pdf?compileGroup=standard&clsiserverid=clsi-pre-emp-e2-c-f-f4s9&enable_pdf_caching=true&popupDownload=true
+load(paste0(OUTPUT, "stations_information.rda"))
 
-# alle_stationen_editable: zeilennamen auf englisch übersetzt und eine leere spalte gelöscht.
+# invertiert: alle stationen nebeneinander
+# nicht invertiert: alle stationen untereinander
 
-# load file
-df <- read.csv2(paste0(INPUT, "alle_stationen_editable.csv"))
+# type of data: Informationen zu gelieferter zeitlicher Auflösung
+    # S: "durch das Bundesland mitgelieferte Studnenwerte
+    # H: "Halbstundenwerte"
+    # T: "Tagesmittelwerte"
+
+# für excel: 
+    # Tausendertrennzeihen - Leerzeichen
+    # Dezimaltrennzeichen  - Punkt
+
+# Werte für:
+  # SCO - Kohlenmonoxid       - inv8 (?)  - SMW - Stundenmittelwert
+  # SNO2 - Stickstoffdioxid   - inv1 (?)  - SMW - Stundenmittelwert
+  # HCO - Kohlenmonoxid
+  # SMP1 - PM10 (Feinstaub)   -           - TMW - Tagesmittelwert
+  # SPM2 - PM2_5 ()           -           - TMW - Tagesmittelwert
+  # SSO2 - Schwefeldioxid     -           - TMW - Tagesmittelwert
 
 
-# edits with file
-df <- df %>% 
-  #set date
-  mutate(date = dmy(date),
-         month = month(date),
-         year = year(date),
-         month_year = paste0(month, "_", year), 
-                      
-         #value as numeric
-         value = as.numeric(value))
+# --> Jedes File hat einzelnen Messtype für ein Jahr
+
+setwd(INPUT)
+# - Tagesmittelwerte
+TMWs <- list.files(path = INPUT, pattern = "TMW_20221230.csv") %>% map_df(~fread(.)) %>%
+  # nur die selecten, die auch in den anderen beiden Vorkommen
+  select(Station, Komponente, Datum, TMW)
+
+## -- 8h Stundenmittelwerte
+SMW8s <- list.files(path = INPUT, pattern = "inv8SMW_20221230.csv") %>% map_df(~fread(.)) %>%
+  
+  #replace -999 with na
+  replace_with_na(replace = list(`8SMW` = -999)) %>%
+  
+  # mittelwert bilden
+  group_by(Station, Komponente, Datum) %>%
+  summarise(TMW = mean(`8SMW`, na.rm = TRUE))
+
+# 1h Stundenmittelwerte
+SMW1s <- list.files(path = INPUT, pattern = "inv1SMW_20221230.csv") %>% map_df(~fread(.)) %>%
+  
+  #replace -999 with na
+  replace_with_na(replace = list(Wert = -999)) %>%
+  
+  # mittelwert bilden
+  group_by(Station, Komponente, Datum) %>%
+  summarise(TMW = mean(Wert, na.rm = TRUE))
+
+
+df <- bind_rows(TMWs, SMW1s, SMW8s)
+
+
+
+# edits am main df
+
+pollution_all <- df %>% 
+  
+  # rename stations
+  rename(station_code = Station,
+         type = Komponente,
+         date = Datum,
+         daily_mean = TMW) %>%
+  
+  # remove '
+  mutate(across(everything(),~ gsub("'", "", .)),
+         daily_mean = as.numeric(daily_mean)) %>%
+  
+  mutate(type = case_when(type == "Schwefeldioxid" ~ "sulfur dioxide",
+                          type == "Kohlenmonoxid" ~ "carbon monoxide",
+                          type == "Stickstoffdioxid" ~ "nitrogen dioxide")) %>%
+  
+  #select year, month, day
+  mutate(year = as.numeric(substr(date, 1, 4)),
+         month = as.numeric(substr(date, 5,6)),
+         day = as.numeric(substr(date, 7,8))) %>%
+  
+  # match station information
+  left_join(stations_information, by = "station_code")
+
+
+
 
 # save file as .rda
-save(df, file = paste0(OUTPUT, "pollution.rda"))
+save(pollution_all, file = paste0(OUTPUT, "pollution_all.rda"))
 
