@@ -6,7 +6,8 @@ library(lubridate)
 library(ggplot2)
 library(gridExtra)
 library(janitor)
-
+library(rio)
+library(ggplot2)
 
 #Time series data with the plotly package
 install.packages("plotly")
@@ -27,21 +28,63 @@ library(TSstudio)
 #Construction = have there been construction sites? 
 
 
-#load file
-v1 <- read.csv2("Verkehrsstaerke_Hamburg_2004_2020.csv")
-View(v1)
+# INPUT, OUTPUT
+INPUT = "G:/Geteilte Ablagen/impact_evaluation_paper/.rda/"
+OUTPUT = "G:/Geteilte Ablagen/impact_evaluation_paper/plots/"
 
 
-#Row to names
-v1 <- row_to_names(v1, row_number = 3, remove_rows_above = TRUE, remove_row = TRUE)
-View(v1)
+#download file
+if (!file.exists(paste0(INPUT, "traffic_information.rda"))){
+  url <- "https://www.hamburg.de/contentblob/7512282/6cfa192436efa7bc62762ebc474c7893/data/dtv-dtvw-2004-2020-download.xlsx"
+  df <- rio::import(url)
+  save(df, paste0(INPUT, "traffic_information.rda"))
+}else {
+  load(paste0(INPUT, "traffic_information.rda"))
+}
+
+
+df <- df %>% 
+  
+  # ersten 3 reihen leer -> filtern
+  filter(!row_number() %in% c(1:3)) %>%
+  row_to_names(1) %>%
+  
+  # DTW für alle Tage (inkl. Wochenende)
+  filter(Kategorie == "DTV (Kfz/24h)") %>% select(-Kategorie) %>%
+  
+  # format into long table
+  pivot_longer(names_to = "year", cols = as.character(c(2004:2020))) %>% 
+  
+  # numeric, um damit zu rechnen
+  mutate(value = as.numeric(value),
+         year = as.numeric(year))
+
+
+# 2687 ist fahrverbot auf max-brauer-straße
+# 2686 ist ausgewiesene alternativroute
+
+# 2683 ist vor fahrverbotsstück
+
+
+df %>% 
+  
+  filter(Zählstelle %in% c("2687", "2686", "2683")) %>%
+  
+  ggplot(aes(y = value, x = year)) +
+  geom_line(aes(colour = Zählstelle))
+  
+
 
 #----------------------------------------------------------
+
+
+
+
 #Stationen Max-Breuer Allee: 2687, 2682, 2683, 2686, 2868
 
 
 #Station 2682: Row 561 and row 4 for years
-v2682 <- v1[c (4, 561),]
+v2682 <- df[c (4, 561),]
 View(v2682)
 
 #Remove cols
